@@ -32,6 +32,14 @@ These are selected named glaciers from `workspace/glacier_app/outputs/*/report.j
 | Herron Glacier | `job_20260303_162343_1372a3aa` | COP30 via OpenTopography API | 30 | 17.543 | 3.791 | 65 |
 | Hotlum Glacier | `job_20260303_071850_af53cc8f` | OpenTopography | 30 | 26.838 | 223.647 | 1 |
 
+## Topography Overlay Figures
+
+| Glacier | Topo Depth Overlay | Topo Flow Overlay |
+|---|---|---|
+| Grenzgletscher | <img src="docs/figures/grenzgletscher_depth_opentopo_overlay.png" alt="Grenzgletscher depth overlay" width="260" /> | <img src="docs/figures/grenzgletscher_flow_opentopo_overlay.png" alt="Grenzgletscher flow overlay" width="260" /> |
+| Herron Glacier | <img src="docs/figures/herron_depth_opentopo_overlay.png" alt="Herron Glacier depth overlay" width="260" /> | <img src="docs/figures/herron_flow_opentopo_overlay.png" alt="Herron Glacier flow overlay" width="260" /> |
+| Hotlum Glacier | <img src="docs/figures/hotlum_depth_opentopo_overlay.png" alt="Hotlum Glacier depth overlay" width="260" /> | <img src="docs/figures/hotlum_flow_opentopo_overlay.png" alt="Hotlum Glacier flow overlay" width="260" /> |
+
 ## Notes
 
 - Output/job artifacts are intentionally git-ignored (see `.gitignore`) to keep releases lightweight.
