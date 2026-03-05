@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glacier Analysis</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Glacier Analysis Pipeline</h1>
+    <div id="statusPill">Idle</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <h2>Controls</h2>
+      <div id="apiWarning" class="warningBanner hidden"></div>
+      <div id="runProgressWrap" class="progressWrap hidden">
+        <div class="progressRow">
+          <span id="runProgressLabel">Queued</span>
+          <span id="runProgressCount">0 / 0</span>
+        </div>
+        <div class="progressBar">
+          <div id="runProgressFill" class="progressFill"></div>
+        </div>
+      </div>
+      <div id="dataSourceStatus" class="sourceBadge sourceUnknown">Data Source: Unknown</div>
+      <label>BBox (minx,miny,maxx,maxy)</label>
+      <input id="bboxInput" type="text" value="-122.53,37.60,-122.35,37.83">
+
+      <label>Source</label>
+      <select id="sourceInput">
+        <option value="osm" selected>OSM</option>
+        <option value="rgi">RGI</option>
+      </select>
+
+      <label>Selection Mode</label>
+      <select id="selectionModeInput">
+        <option value="bbox" selected>Draw BBox</option>
+        <option value="glacier">Click Glacier</option>
+        <option value="relation">Paste OSM Relation</option>
+      </select>
+      <label>Glacier Click Radius (m)</label>
+      <input id="glacierRadiusInput" type="number" step="100" min="100" max="25000" value="5000">
+      <label>OSM Relation Text / ID</label>
+      <textarea id="relationTextInput" rows="7" placeholder="Paste OSM relation snippet or relation id"></textarea>
+      <button id="selectRelationBtn" type="button">Select Relation Glacier</button>
+
+      <label>Resolution (m)</label>
+      <input id="resolutionInput" type="number" step="1" min="1" value="30">
+
+      <label>DEM Dataset</label>
+      <select id="datasetInput">
+        <option value="COP30" selected>COP30 (Recommended for Alaska/high latitudes)</option>
+        <option value="opentopography">SRTMGL1/OpenTopography default (faster, limited high-lat coverage)</option>
+      </select>
+      <div class="fieldHint">Use COP30 for glaciers near/above ~60°N (for example Alaska). SRTM may fail there.</div>
+
+      <label>Grid Size (m)</label>
+      <input id="gridSizeInput" type="number" step="1" min="1" value="100">
+
+      <label>Plot Downsample (max axis px)</label>
+      <input id="plotDownsampleInput" type="number" step="1" min="1" max="2000" value="220">
+
+      <label>&tau;<sub>0</sub>/(&rho;g) (m)</label>
+      <input id="tau0Input" type="number" step="0.1" min="0.1" value="11">
+
+      <label>f' (dimensionless)</label>
+      <input id="fPrimeInput" type="number" step="0.1" min="0.1" value="1">
+
+      <label>Slope Units</label>
+      <select id="slopeUnitsInput">
+        <option value="radians" selected>Radians</option>
+        <option value="degrees">Degrees</option>
+      </select>
+
+      <label>OpenTopography API Key</label>
+      <input id="apiKeyInput" type="password" placeholder="optional">
+
+      <button id="runFullBtn" type="button">Run Full Pipeline</button>
+      <button id="cancelRunBtn" type="button" class="secondaryBtn">Cancel Current Run</button>
+      <button id="reanalyzeBtn" type="button">Reanalyze (Reuse DEM)</button>
+      <label>Past Jobs</label>
+      <div class="jobLoadRow">
+        <select id="pastJobsSelect"></select>
+        <button id="refreshJobsBtn" type="button" class="secondaryBtn">Refresh</button>
+      </div>
+      <button id="loadJobBtn" type="button">Load Selected Job</button>
+      <a id="downloadReportLink" href="#" class="disabled">Download Bundle ZIP</a>
+      <pre id="responseBox"></pre>
+    </section>
+
+    <section class="panel map">
+      <h2>Map / Outline <button class="fullscreenBtn" data-fullscreen-target="map">Fullscreen</button></h2>
+      <div id="map"></div>
+    </section>
+
+    <section class="panel elevation">
+      <h2>Elevation (Plotly)</h2>
+      <div class="plotCard">
+        <button class="fullscreenBtn" data-fullscreen-target="demPlot">Fullscreen</button>
+        <div id="demPlot" class="plotBox"></div>
+      </div>
+    </section>
+
+    <section class="panel slope">
+      <h2>Slope / Flow / Depth (Plotly)</h2>
+      <div class="previewGrid">
+        <div class="plotCard">
+          <button class="fullscreenBtn" data-fullscreen-target="slopePlot">Fullscreen</button>
+          <div id="slopePlot" class="plotBox"></div>
+        </div>
+        <div class="plotCard">
+          <button class="fullscreenBtn" data-fullscreen-target="flowPlot">Fullscreen</button>
+          <div id="flowPlot" class="plotBox"></div>
+        </div>
+        <div class="plotCard">
+          <button class="fullscreenBtn" data-fullscreen-target="depthPlot">Fullscreen</button>
+          <div id="depthPlot" class="plotBox"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel topomapPanel">
+      <h2>OpenTopoMap Overlays</h2>
+      <div class="previewGrid previewGrid2">
+        <div class="plotCard">
+          <button class="fullscreenBtn" data-fullscreen-target="depthTopoMap">Fullscreen</button>
+          <div id="depthTopoMap" class="mapBox"></div>
+          <div class="mapLegend">
+            <div class="legendTitle">Depth Overlay</div>
+            <div class="legendGradient depthGrad"></div>
+            <div id="depthLegendRange" class="legendRow"><span>Shallow</span><span>Deep</span></div>
+            <div class="legendHint">Leaflet scale bar in lower-left</div>
+          </div>
+        </div>
+        <div class="plotCard">
+          <button class="fullscreenBtn" data-fullscreen-target="flowTopoMap">Fullscreen</button>
+          <div id="flowTopoMap" class="mapBox"></div>
+          <div class="mapLegend">
+            <div class="legendTitle">Flow Overlay</div>
+            <div class="legendItem"><span class="swatch flowLine"></span>Flowlines</div>
+            <div class="legendItem"><span class="swatch vectorLine"></span>Flow vectors</div>
+            <div class="legendItem"><span class="swatch outlineLine"></span>Glacier outline</div>
+            <div class="legendHint">Leaflet scale bar in lower-left</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Environments
+.env
+.venv/
+venv/
+
+# Local caches and installed packages
+workspace/.cache/
+workspace/.local/
+
+# App runtime/generated data
+workspace/glacier_app/outputs/
+workspace/glacier_app/outputs/job_*/
+workspace/glacier_app/jobs/
+workspace/glacier_app/tmp/
+workspace/glacier_app/logs/
+
+# Build and temp artifacts
+*.log
+*.tmp

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glacier-app"
+version = "0.1.0"
+description = "Glacier outline, elevation, slope, flow, and depth analysis app."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Glacier App Team" }]
+dependencies = [
+  "Flask>=3.0,<4.0",
+  "numpy>=1.26,<3.0",
+  "scipy>=1.12,<2.0",
+  "PyYAML>=6.0,<7.0",
+  "requests>=2.31,<3.0",
+  "rasterio>=1.3,<2.0",
+  "shapely>=2.0,<3.0",
+  "pyproj>=3.6,<4.0",
+  "matplotlib>=3.8,<4.0",
+  "gunicorn>=22.0,<24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[project.scripts]
+glacier-cli = "glacier_analysis.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glacier_analysis*"]
